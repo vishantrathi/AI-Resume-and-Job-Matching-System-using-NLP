@@ -9,21 +9,30 @@ import api from '../api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const STRONG_MATCH_THRESHOLD = 70;
+const GOOD_MATCH_THRESHOLD = 40;
+
 function scoreColor(score) {
-  if (score >= 70) return '#10b981'; // green
-  if (score >= 40) return '#f59e0b'; // amber
-  return '#ef4444'; // red
+  if (score >= STRONG_MATCH_THRESHOLD) return '#10b981'; // green
+  if (score >= GOOD_MATCH_THRESHOLD) return '#f59e0b';   // amber
+  return '#ef4444';                                       // red
 }
 
-function scoreGradient(score) {
-  if (score >= 70) return 'from-emerald-400 to-green-600';
-  if (score >= 40) return 'from-amber-400 to-orange-500';
-  return 'from-red-400 to-rose-600';
+function scoreGradientStyle(score) {
+  if (score >= STRONG_MATCH_THRESHOLD) return { background: 'linear-gradient(to right, #34d399, #16a34a)' };
+  if (score >= GOOD_MATCH_THRESHOLD) return { background: 'linear-gradient(to right, #fbbf24, #f97316)' };
+  return { background: 'linear-gradient(to right, #f87171, #e11d48)' };
+}
+
+function scoreBadgeStyle(score) {
+  if (score >= STRONG_MATCH_THRESHOLD) return { background: 'linear-gradient(to right, #34d399, #16a34a)', color: '#fff' };
+  if (score >= GOOD_MATCH_THRESHOLD) return { background: 'linear-gradient(to right, #fbbf24, #f97316)', color: '#fff' };
+  return { background: 'linear-gradient(to right, #f87171, #e11d48)', color: '#fff' };
 }
 
 function scoreLabel(score) {
-  if (score >= 70) return 'Strong Match';
-  if (score >= 40) return 'Good Match';
+  if (score >= STRONG_MATCH_THRESHOLD) return 'Strong Match';
+  if (score >= GOOD_MATCH_THRESHOLD) return 'Good Match';
   return 'Partial Match';
 }
 
@@ -108,7 +117,10 @@ function JobCard({ rec, onSelect, isSelected, isSaved, onSave }) {
         {/* Score + save */}
         <div className="flex flex-col items-center gap-1 flex-shrink-0">
           <ScoreCircle score={matchingScore} />
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-r text-white ${scoreGradient(matchingScore)}`}>
+          <span
+            className="text-xs font-medium px-2 py-0.5 rounded-full"
+            style={scoreBadgeStyle(matchingScore)}
+          >
             {scoreLabel(matchingScore)}
           </span>
         </div>
@@ -157,7 +169,8 @@ function JobCard({ rec, onSelect, isSelected, isSaved, onSave }) {
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
           <motion.div
-            className={`h-2 rounded-full bg-gradient-to-r ${scoreGradient(matchingScore)}`}
+            className="h-2 rounded-full"
+            style={scoreGradientStyle(matchingScore)}
             initial={{ width: 0 }}
             animate={{ width: `${matchingScore}%` }}
             transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
@@ -201,6 +214,13 @@ function JobCard({ rec, onSelect, isSelected, isSaved, onSave }) {
   );
 }
 
+const STAT_COLORS = {
+  blue: '#2563eb',
+  purple: '#7c3aed',
+  green: '#059669',
+  amber: '#d97706',
+};
+
 // ─── Stats header ─────────────────────────────────────────────────────────────
 function StatsHeader({ recommendations, skills }) {
   const bestMatch = recommendations.length > 0
@@ -222,10 +242,10 @@ function StatsHeader({ recommendations, skills }) {
           key={label}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className={`bg-white rounded-2xl border border-gray-200 p-4 text-center shadow-sm`}
+          className="bg-white rounded-2xl border border-gray-200 p-4 text-center shadow-sm"
         >
           <div className="text-2xl mb-1">{icon}</div>
-          <div className={`text-2xl font-bold text-${color}-600`}>{value}</div>
+          <div className="text-2xl font-bold" style={{ color: STAT_COLORS[color] }}>{value}</div>
           <div className="text-xs text-gray-500 mt-0.5">{label}</div>
         </motion.div>
       ))}
@@ -341,7 +361,8 @@ function GapPanel({ selected, onClose }) {
         </div>
         <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
           <motion.div
-            className={`h-3 rounded-full bg-gradient-to-r ${scoreGradient(matchingScore)}`}
+            className="h-3 rounded-full"
+            style={scoreGradientStyle(matchingScore)}
             initial={{ width: 0 }}
             animate={{ width: `${matchingScore}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}

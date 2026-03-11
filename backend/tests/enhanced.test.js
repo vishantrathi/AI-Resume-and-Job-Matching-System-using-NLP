@@ -1,4 +1,4 @@
-const { calculateMatchEnhanced, normaliseSkill } = require('../utils/matcher');
+const { calculateMatchEnhanced } = require('../utils/matcher');
 const {
   getCached, setCache, generateFallbackJobs, normalizeAndMatch, _cache,
 } = require('../services/jobScraper');

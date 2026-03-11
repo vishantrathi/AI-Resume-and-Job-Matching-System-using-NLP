@@ -14,6 +14,13 @@ function scoreColor(score) {
   return '#ef4444';
 }
 
+const STAT_COLORS = {
+  blue: '#2563eb',
+  purple: '#7c3aed',
+  green: '#059669',
+  amber: '#d97706',
+};
+
 const CandidateDashboard = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -127,7 +134,7 @@ const CandidateDashboard = () => {
                   className="bg-white rounded-2xl border border-gray-200 p-4 text-center shadow-sm"
                 >
                   <div className="text-2xl mb-1">{icon}</div>
-                  <div className={`text-2xl font-bold text-${color}-600`}>{value}</div>
+                  <div className="text-2xl font-bold" style={{ color: STAT_COLORS[color] }}>{value}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{label}</div>
                 </motion.div>
               ))}

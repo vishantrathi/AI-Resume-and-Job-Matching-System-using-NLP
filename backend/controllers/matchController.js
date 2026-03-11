@@ -37,11 +37,15 @@ function normaliseMatchDoc(matchDoc) {
  */
 function normaliseScrapedMatch(scored) {
   const job = scored.job || {};
+  const matchData = scored.match || {};
+  const matchingScore = scored.matchingScore !== undefined ? scored.matchingScore : (matchData.matchingScore ?? 0);
+  const matchedSkills = scored.matchedSkills !== undefined ? scored.matchedSkills : (matchData.matchedSkills ?? []);
+  const missingSkills = scored.missingSkills !== undefined ? scored.missingSkills : (matchData.missingSkills ?? []);
   return {
     id: scored._id ? String(scored._id) : null,
-    matchingScore: scored.matchingScore !== undefined ? scored.matchingScore : (scored.match?.matchingScore ?? 0),
-    matchedSkills: scored.matchedSkills !== undefined ? scored.matchedSkills : (scored.match?.matchedSkills ?? []),
-    missingSkills: scored.missingSkills !== undefined ? scored.missingSkills : (scored.match?.missingSkills ?? []),
+    matchingScore,
+    matchedSkills,
+    missingSkills,
     job: {
       _id: job._id ? String(job._id) : null,
       title: job.title || '',
