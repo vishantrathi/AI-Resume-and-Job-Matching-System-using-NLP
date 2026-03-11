@@ -5,12 +5,19 @@ const {
   createJob, getAllJobs, getJobById, updateJob, deleteJob, getMyJobs, jobValidation,
 } = require('../controllers/jobController');
 const { matchJobs, getRecommendations } = require('../controllers/matchController');
+const { scrapeAndMatchJobs, getScrapedJobs } = require('../controllers/scrapeController');
 
 // GET /api/jobs/recommendations  (candidate)
 router.get('/recommendations', protect, requireRole('candidate'), getRecommendations);
 
 // GET /api/jobs/recruiter/mine  (recruiter)
 router.get('/recruiter/mine', protect, requireRole('recruiter'), getMyJobs);
+
+// POST /api/jobs/scrape  (candidate) — discover jobs from external sources
+router.post('/scrape', protect, requireRole('candidate'), scrapeAndMatchJobs);
+
+// GET /api/jobs/scraped  (public) — list stored scraped jobs
+router.get('/scraped', getScrapedJobs);
 
 // POST /api/jobs  (recruiter)
 router.post('/', protect, requireRole('recruiter'), jobValidation, createJob);

@@ -12,6 +12,8 @@ import ResumeUpload from './pages/ResumeUpload';
 import JobRecommendations from './pages/JobRecommendations';
 import JobList from './pages/JobList';
 import PostJob from './pages/PostJob';
+import SkillAnalysis from './pages/SkillAnalysis';
+import SavedJobs from './pages/SavedJobs';
 import './App.css';
 
 const AppRoutes = () => {
@@ -42,6 +44,14 @@ const AppRoutes = () => {
       <Route
         path="/recommendations"
         element={<PrivateRoute role="candidate"><JobRecommendations /></PrivateRoute>}
+      />
+      <Route
+        path="/skill-analysis"
+        element={<PrivateRoute role="candidate"><SkillAnalysis /></PrivateRoute>}
+      />
+      <Route
+        path="/saved-jobs"
+        element={<PrivateRoute role="candidate"><SavedJobs /></PrivateRoute>}
       />
 
       {/* Recruiter routes */}
