@@ -3,9 +3,20 @@
  *
  * Calculates a matching score between candidate skills and job required skills
  * using TF-IDF-inspired term frequency overlap combined with synonym/alias awareness.
+ *
+ * calculateMatch          — original algorithm (preserved for backward compatibility)
+ * calculateMatchEnhanced  — improved weighted scoring:
+ *   50% skill match · 20% title similarity · 15% experience match · 15% NLP text similarity
  */
 
 const { extractSkills, tokenize, removeStopWords } = require('./nlpProcessor');
+
+let stringSimilarity;
+try {
+  stringSimilarity = require('string-similarity');
+} catch (_) {
+  stringSimilarity = null;
+}
 
 // Alias groups — skills in the same group are considered equivalent
 const ALIAS_GROUPS = [
@@ -138,4 +149,130 @@ function capitalise(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-module.exports = { calculateMatch, normaliseSkill, normaliseSkills, tokenOverlapScore };
+// ─── Enhanced matching algorithm ─────────────────────────────────────────────
+
+/**
+ * Compute title similarity between a candidate's resume text and a job title.
+ * Uses string-similarity (Dice coefficient) when available, else token overlap.
+ *
+ * @param {string} resumeText
+ * @param {string} jobTitle
+ * @returns {number} 0–1
+ */
+function titleSimilarity(resumeText, jobTitle) {
+  if (!resumeText || !jobTitle) return 0;
+  if (stringSimilarity) {
+    return stringSimilarity.compareTwoStrings(
+      resumeText.toLowerCase().substring(0, 500),
+      jobTitle.toLowerCase(),
+    );
+  }
+  return tokenOverlapScore(resumeText, jobTitle);
+}
+
+/**
+ * Estimate experience match as a ratio of candidate experience years to job requirement.
+ *
+ * @param {object[]} resumeExperience - Array of experience entries with { duration } strings
+ * @param {string}   jobDescription   - Full job description text
+ * @returns {number} 0–1
+ */
+function experienceMatch(resumeExperience, jobDescription) {
+  const jobText = jobDescription || '';
+
+  // Extract years required from job description (e.g. "3+ years", "2-5 years")
+  const reqMatch = jobText.match(/(\d+)\s*[\-–]\s*(\d+)\s*years?/i)
+    || jobText.match(/(\d+)\+?\s*years?/i);
+
+  let requiredYears = 0;
+  if (reqMatch) {
+    requiredYears = parseInt(reqMatch[1], 10);
+    if (reqMatch[2]) {
+      requiredYears = Math.round((parseInt(reqMatch[1], 10) + parseInt(reqMatch[2], 10)) / 2);
+    }
+  }
+
+  if (requiredYears === 0) return 0.5; // No requirement stated — neutral
+
+  // Estimate candidate's experience from experience array
+  let candidateYears = 0;
+  if (Array.isArray(resumeExperience) && resumeExperience.length > 0) {
+    candidateYears = resumeExperience.length; // Approximate: one entry ≈ one year
+    for (const exp of resumeExperience) {
+      const dur = (exp.duration || exp.years || '').toString();
+      const yMatch = dur.match(/(\d+)\s*year/i);
+      if (yMatch) candidateYears = Math.max(candidateYears, parseInt(yMatch[1], 10));
+    }
+  }
+
+  if (candidateYears === 0) return 0.3; // No experience data
+
+  return Math.min(candidateYears / requiredYears, 1);
+}
+
+/**
+ * Improved match algorithm using weighted scoring:
+ *   50% skill match
+ *   20% title similarity
+ *   15% experience match
+ *   15% NLP / keyword text similarity
+ *
+ * The result shape is identical to calculateMatch so it can be used as a
+ * drop-in replacement.
+ *
+ * @param {object} resume - { skills, rawText, experience? }
+ * @param {object} job    - { requiredSkills, description, title? }
+ * @returns {{ matchingScore, matchedSkills, missingSkills }}
+ */
+function calculateMatchEnhanced(resume, job) {
+  const candidateSkills = normaliseSkills(resume.skills || []);
+  const jobSkills = normaliseSkills(job.requiredSkills || []);
+
+  // ── 1. Skill match (50%) ──────────────────────────────────────────────────
+  let skillRatio = 0;
+  let matched = [];
+  let missing = [];
+
+  if (jobSkills.size === 0) {
+    // Fall back to text-derived skills when job has no explicit skill list
+    const derivedJobSkills = normaliseSkills(extractSkills(job.description || ''));
+    matched = [...derivedJobSkills].filter((s) => candidateSkills.has(s));
+    missing = [...derivedJobSkills].filter((s) => !candidateSkills.has(s));
+    skillRatio = derivedJobSkills.size > 0 ? matched.length / derivedJobSkills.size : 0;
+  } else {
+    matched = [...jobSkills].filter((s) => candidateSkills.has(s));
+    missing = [...jobSkills].filter((s) => !candidateSkills.has(s));
+    skillRatio = matched.length / jobSkills.size;
+  }
+
+  // ── 2. Title similarity (20%) ────────────────────────────────────────────
+  const titleScore = titleSimilarity(resume.rawText || '', job.title || '');
+
+  // ── 3. Experience match (15%) ────────────────────────────────────────────
+  const expScore = experienceMatch(resume.experience || [], job.description || '');
+
+  // ── 4. NLP text similarity (15%) ─────────────────────────────────────────
+  const candidateText = (resume.rawText || '') + ' ' + (resume.skills || []).join(' ');
+  const jobText = (job.description || '') + ' ' + (job.requiredSkills || []).join(' ');
+  const nlpScore = tokenOverlapScore(candidateText, jobText);
+
+  // ── Weighted final score ─────────────────────────────────────────────────
+  const rawScore = (skillRatio * 0.50)
+    + (titleScore * 0.20)
+    + (expScore * 0.15)
+    + (nlpScore * 0.15);
+
+  return {
+    matchingScore: Math.min(Math.round(rawScore * 100), 100),
+    matchedSkills: matched.map(capitalise),
+    missingSkills: missing.map(capitalise),
+  };
+}
+
+module.exports = {
+  calculateMatch,
+  calculateMatchEnhanced,
+  normaliseSkill,
+  normaliseSkills,
+  tokenOverlapScore,
+};

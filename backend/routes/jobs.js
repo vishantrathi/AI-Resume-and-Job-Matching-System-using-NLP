@@ -10,6 +10,9 @@ const { scrapeAndMatchJobs, getScrapedJobs } = require('../controllers/scrapeCon
 // GET /api/jobs/recommendations  (candidate)
 router.get('/recommendations', protect, requireRole('candidate'), getRecommendations);
 
+// GET /api/jobs/recommendations/:userId  (admin/service variant — still requires auth)
+router.get('/recommendations/:userId', protect, getRecommendations);
+
 // GET /api/jobs/recruiter/mine  (recruiter)
 router.get('/recruiter/mine', protect, requireRole('recruiter'), getMyJobs);
 
