@@ -38,20 +38,28 @@ function fetchJSON(url, headers = {}) {
 }
 
 /**
- * Strip HTML tags from a string.
+ * Strip HTML tags from a string and decode common HTML entities in a single pass.
  * @param {string} html
  * @returns {string}
  */
 function stripHtml(html) {
   if (!html || typeof html !== 'string') return '';
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
+
+  // Remove all HTML tags first
+  const noTags = html.replace(/<[^>]*>/g, ' ');
+
+  // Decode HTML entities in a single pass to avoid double-unescaping
+  const ENTITIES = {
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&nbsp;': ' ',
+    '&amp;': '&',
+  };
+
+  return noTags
+    .replace(/&(?:lt|gt|quot|#39|nbsp|amp);/g, (match) => ENTITIES[match] || match)
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
