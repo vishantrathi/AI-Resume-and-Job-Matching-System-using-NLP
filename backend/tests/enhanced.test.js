@@ -154,7 +154,8 @@ describe('jobScraper service', () => {
       const result = normalizeAndMatch(raw, resume, 'test-source');
       expect(result).toHaveProperty('job');
       expect(result).toHaveProperty('match');
-      expect(result).toHaveProperty('source', 'scraped');
+      // source should now reflect the actual portal label passed as the third argument
+      expect(result).toHaveProperty('source', 'test-source');
       expect(result.match).toHaveProperty('matchingScore');
       expect(result.match).toHaveProperty('matchedSkills');
       expect(result.match).toHaveProperty('missingSkills');
