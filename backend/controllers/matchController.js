@@ -1,7 +1,9 @@
 const Resume = require('../models/Resume');
 const Job = require('../models/Job');
+const ScrapedJob = require('../models/ScrapedJob');
 const Match = require('../models/Match');
 const { calculateMatch } = require('../utils/matcher');
+const { scrapeJobs } = require('../utils/scraper');
 
 /**
  * POST /api/job/match
@@ -48,6 +50,7 @@ const matchJobs = async (req, res) => {
 /**
  * GET /api/jobs/recommendations
  * Return previously computed (or freshly computed) recommendations.
+ * If no DB jobs exist, automatically triggers job discovery from external sources.
  */
 const getRecommendations = async (req, res) => {
   const resume = await Resume.findOne({ candidate: req.user.id });
@@ -60,7 +63,42 @@ const getRecommendations = async (req, res) => {
 
   // If no matches yet, compute them on the fly
   if (matches.length === 0) {
-    const jobs = await Job.find({ isActive: true });
+    let jobs = await Job.find({ isActive: true });
+
+    // If no jobs in DB, trigger external job discovery
+    if (jobs.length === 0) {
+      const scrapedData = await scrapeJobs(resume.skills || [], 30);
+      for (const jobData of scrapedData) {
+        try {
+          const filter = jobData.externalId
+            ? { externalId: jobData.externalId, source: jobData.source }
+            : { title: jobData.title, company: jobData.company, source: jobData.source };
+          await ScrapedJob.findOneAndUpdate(filter, jobData, {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true,
+          });
+        } catch (err) {
+          if (err.code !== 11000) console.error('[Match] Scrape save error:', err.message);
+        }
+      }
+      // Return scraped results directly (no Match documents for scraped jobs)
+      const scrapedJobs = await ScrapedJob.find({ isActive: true }).sort({ scrapedAt: -1 }).limit(30);
+      const scrapedMatches = scrapedJobs.map((job) => {
+        const { matchingScore, matchedSkills, missingSkills } = calculateMatch(resume, job);
+        return {
+          _id: null,
+          matchingScore,
+          matchedSkills,
+          missingSkills,
+          job,
+          isScraped: true,
+        };
+      });
+      scrapedMatches.sort((a, b) => b.matchingScore - a.matchingScore);
+      return res.json(scrapedMatches);
+    }
+
     for (const job of jobs) {
       const { matchingScore, matchedSkills, missingSkills } = calculateMatch(resume, job);
       await Match.findOneAndUpdate(
@@ -101,7 +139,11 @@ const getSkillGap = async (req, res) => {
   const resume = await Resume.findOne({ candidate: req.user.id });
   if (!resume) return res.status(404).json({ message: 'Please upload a resume first' });
 
-  const job = await Job.findById(req.params.jobId);
+  // Check both regular and scraped jobs
+  let job = await Job.findById(req.params.jobId).catch(() => null);
+  if (!job) {
+    job = await ScrapedJob.findById(req.params.jobId).catch(() => null);
+  }
   if (!job) return res.status(404).json({ message: 'Job not found' });
 
   const { matchingScore, matchedSkills, missingSkills } = calculateMatch(resume, job);
