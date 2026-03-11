@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const { authLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -9,8 +10,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Apply general rate limiting to all API routes
+app.use('/api', apiLimiter);
+
 // Routes
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/resume', require('./routes/resume'));
 app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/candidate', require('./routes/candidate'));
