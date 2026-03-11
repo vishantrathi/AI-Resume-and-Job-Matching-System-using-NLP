@@ -45,6 +45,31 @@ function initials(company) {
     .join('');
 }
 
+// ─── Source portal labels + styles ────────────────────────────────────────────
+const SOURCE_META = {
+  linkedin:    { label: 'LinkedIn',    bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200',   icon: '💼' },
+  indeed:      { label: 'Indeed',      bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', icon: '🔍' },
+  glassdoor:   { label: 'Glassdoor',   bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200',  icon: '🪟' },
+  naukri:      { label: 'Naukri',      bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', icon: '📋' },
+  internshala: { label: 'Internshala', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', icon: '🎓' },
+  wellfound:   { label: 'Wellfound',   bg: 'bg-pink-50',   text: 'text-pink-700',   border: 'border-pink-200',   icon: '🚀' },
+  company:     { label: 'Company',     bg: 'bg-teal-50',   text: 'text-teal-700',   border: 'border-teal-200',   icon: '🏢' },
+  remoteok:    { label: 'RemoteOK',    bg: 'bg-cyan-50',   text: 'text-cyan-700',   border: 'border-cyan-200',   icon: '🌍' },
+  generated:   { label: 'Suggested',   bg: 'bg-gray-100',  text: 'text-gray-500',   border: 'border-gray-200',   icon: '✨' },
+  scraped:     { label: 'Live',        bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100', icon: '🌐' },
+  db:          { label: 'Posted',      bg: 'bg-slate-50',  text: 'text-slate-600',  border: 'border-slate-200',  icon: '📌' },
+};
+
+function SourceBadge({ source }) {
+  if (!source || source === 'db') return null;
+  const meta = SOURCE_META[source] || SOURCE_META.scraped;
+  return (
+    <span className={`text-xs ${meta.bg} ${meta.text} border ${meta.border} px-2 py-0.5 rounded-full`}>
+      {meta.icon} {meta.label}
+    </span>
+  );
+}
+
 // ─── Animated match score circle ─────────────────────────────────────────────
 function ScoreCircle({ score }) {
   const radius = 36;
@@ -133,11 +158,7 @@ function JobCard({ rec, onSelect, isSelected, isSaved, onSave }) {
             💰 {job.salary}
           </span>
         )}
-        {source === 'scraped' && (
-          <span className="text-xs bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-full">
-            🌐 Live
-          </span>
-        )}
+        <SourceBadge source={source} />
       </div>
 
       {/* Skill tags */}
@@ -435,6 +456,7 @@ const JobRecommendations = () => {
   const [filter, setFilter] = useState('');
   const [minScore, setMinScore] = useState(0);
   const [sortBy, setSortBy] = useState('score');
+  const [sourceFilter, setSourceFilter] = useState('all');
   const [savedIds, setSavedIds] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('savedJobs') || '[]')); }
     catch (_) { return new Set(); }
@@ -506,6 +528,7 @@ const JobRecommendations = () => {
   const filtered = recommendations
     .filter((r) => {
       if (r.matchingScore < minScore) return false;
+      if (sourceFilter !== 'all' && r.source !== sourceFilter) return false;
       if (!filter) return true;
       const q = filter.toLowerCase();
       return (
@@ -520,6 +543,9 @@ const JobRecommendations = () => {
       if (sortBy === 'company') return (a.job?.company || '').localeCompare(b.job?.company || '');
       return 0;
     });
+
+  // Collect unique source values for the filter dropdown
+  const availableSources = ['all', ...new Set(recommendations.map((r) => r.source).filter(Boolean))];
 
   if (loading) {
     return (
@@ -632,6 +658,19 @@ const JobRecommendations = () => {
                 <option value="score">Sort: Best Match</option>
                 <option value="title">Sort: Job Title</option>
                 <option value="company">Sort: Company</option>
+              </select>
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+              >
+                {availableSources.map((src) => (
+                  <option key={src} value={src}>
+                    {src === 'all'
+                      ? 'All Sources'
+                      : (SOURCE_META[src]?.label || (src ? src.charAt(0).toUpperCase() + src.slice(1) : 'Other'))}
+                  </option>
+                ))}
               </select>
               <span className="text-xs text-gray-400">{filtered.length} results</span>
             </div>

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const { authLimiter, apiLimiter } = require('./middleware/rateLimiter');
+const { startJobDiscoveryWorker } = require('./workers/jobDiscovery');
 
 const app = express();
 
@@ -33,6 +34,8 @@ const PORT = process.env.PORT || 5000;
 const start = async () => {
   await connectDB();
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  // Start background job discovery worker (runs every 10 minutes)
+  startJobDiscoveryWorker();
 };
 
 if (require.main === module) {

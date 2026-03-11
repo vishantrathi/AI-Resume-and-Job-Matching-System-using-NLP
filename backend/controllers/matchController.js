@@ -56,6 +56,8 @@ function normaliseScrapedMatch(scored) {
       url: job.url || job.applicationLink || '',
       salary: job.salary || '',
     },
+    // Preserve the specific portal label (linkedin, indeed, naukri, etc.) if
+    // present; fall back to 'scraped' for backward compatibility.
     source: scored.source || 'scraped',
   };
 }

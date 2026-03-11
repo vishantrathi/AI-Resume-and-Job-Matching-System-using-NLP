@@ -1,9 +1,11 @@
 /**
  * Job Scraper Service
  *
- * Fetches job listings from multiple public job APIs and aggregates results.
- * Functions are named to match the conceptual sources (LinkedIn, Indeed, Naukri)
- * while using publicly accessible API endpoints.
+ * Fetches job listings from multiple sources:
+ *   1. Google search via Serper API (googleJobSearch) — real-time, multi-portal
+ *   2. RemoteOK public API           — reliable fallback
+ *   3. Adzuna API                    — broad job listings
+ *   4. The Muse API                  — company-focused roles
  *
  * Results are cached in memory for 10 minutes to avoid excessive requests.
  * Jobs are normalised into a consistent format ready for match scoring.
@@ -12,6 +14,7 @@
 const https = require('https');
 const { extractSkills } = require('../utils/nlpProcessor');
 const { calculateMatch } = require('../utils/matcher');
+const { searchJobsOnGoogle } = require('./googleJobSearch');
 
 // ─── In-memory cache ────────────────────────────────────────────────────────
 const _cache = new Map();
@@ -105,8 +108,9 @@ function normalizeAndMatch(raw, resume, src) {
       matchedSkills: matchResult.matchedSkills,
       missingSkills: matchResult.missingSkills,
     },
-    source: 'scraped',
-    _sourceLabel: src,
+    // Expose the specific portal name as the source so the frontend can show
+    // "LinkedIn", "Indeed", etc. instead of a generic "scraped" label.
+    source: src || 'scraped',
     externalId: raw.externalId || raw.url || '',
   };
 }
@@ -314,17 +318,41 @@ async function scrapeAllJobs(skills, resume, limit = 50) {
       .slice(0, limit);
   }
 
-  // Fetch from all sources concurrently
-  const [linkedIn, indeed, naukri] = await Promise.allSettled([
+  // Fetch from all sources concurrently (API sources + Google search)
+  const [linkedIn, indeed, naukri, googleUrls] = await Promise.allSettled([
     scrapeLinkedInJobs(skills),
     scrapeIndeedJobs(skills),
     scrapeNaukriJobs(skills),
+    searchJobsOnGoogle(skills, { maxUrls: 30 }),
   ]);
+
+  // Convert Google search URL results into lightweight job objects using
+  // the title and snippet extracted by the search engine.
+  const googleJobs = [];
+  if (googleUrls.status === 'fulfilled') {
+    for (const item of googleUrls.value) {
+      const description = item.snippet || '';
+      const skills_ = extractSkills(description + ' ' + item.title);
+      googleJobs.push({
+        title: item.title || 'Software Engineer',
+        company: '',
+        location: 'Remote',
+        salary: '',
+        description: description.substring(0, 2000),
+        requiredSkills: skills_,
+        url: item.url,
+        externalId: item.url,
+        postedDate: new Date(),
+        _src: item.source || 'web',
+      });
+    }
+  }
 
   const allRaw = [
     ...(linkedIn.status === 'fulfilled' ? linkedIn.value.map((j) => ({ ...j, _src: 'linkedin' })) : []),
     ...(indeed.status === 'fulfilled' ? indeed.value.map((j) => ({ ...j, _src: 'indeed' })) : []),
     ...(naukri.status === 'fulfilled' ? naukri.value.map((j) => ({ ...j, _src: 'naukri' })) : []),
+    ...googleJobs,
   ];
 
   // De-duplicate by externalId/url

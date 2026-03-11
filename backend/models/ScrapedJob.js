@@ -6,6 +6,7 @@ const scrapedJobSchema = new mongoose.Schema(
     company: { type: String, default: '', trim: true },
     location: { type: String, default: '' },
     salary: { type: String, default: '' },
+    experience: { type: String, default: '' },
     description: { type: String, default: '' },
     requiredSkills: [{ type: String }],
     url: { type: String, default: '' },
