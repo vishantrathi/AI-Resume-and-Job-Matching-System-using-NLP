@@ -149,7 +149,7 @@ const CareerRoadmap = () => {
           <div className="text-6xl mb-4">🗺️</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">No Resume Found</h2>
           <p className="text-gray-500 mb-6">
-            Upload your resume to generate a personalised career roadmap.
+            Upload your resume to generate a personalized career roadmap.
           </p>
           <Link
             to="/upload"
@@ -179,7 +179,7 @@ const CareerRoadmap = () => {
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Career Roadmap</h1>
           <p className="text-gray-500 mt-1">
-            Your personalised learning plan to reach your target role
+            Your personalized learning plan to reach your target role
           </p>
         </div>
 

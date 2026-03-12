@@ -136,11 +136,9 @@ const getCareerRoadmap = async (req, res) => {
   const targetRole = topJob ? topJob.title : 'Software Developer';
 
   // Compute missing skills
-  let missingSkills = [];
-  if (topJob) {
-    const { missingSkills: missing } = calculateMatchEnhanced(resume, topJob);
-    missingSkills = missing;
-  }
+  const missingSkills = topJob
+    ? calculateMatchEnhanced(resume, topJob).missingSkills
+    : [];
 
   // Enrich each missing skill with hierarchy metadata and sort by difficulty
   const enriched = missingSkills.map((skill) => {

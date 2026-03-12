@@ -351,7 +351,8 @@ function ChartsPanel({ recommendations, skills }) {
 // ─── Skill gap detail panel ───────────────────────────────────────────────────
 function GapPanel({ selected, onClose }) {
   if (!selected) return null;
-  const { job = {}, matchingScore = 0, skillMatchScore = 0, matchedSkills = [], missingSkills = [] } = selected;
+  const { job = {}, matchingScore = 0, skillMatchScore: rawSkillScore, matchedSkills = [], missingSkills = [] } = selected;
+  const skillMatchScore = rawSkillScore || 0;
 
   return (
     <motion.div
