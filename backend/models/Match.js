@@ -6,6 +6,7 @@ const matchSchema = new mongoose.Schema(
     resume: { type: mongoose.Schema.Types.ObjectId, ref: 'Resume', required: true },
     job: { type: mongoose.Schema.Types.ObjectId, ref: 'Job', required: true },
     matchingScore: { type: Number, default: 0 },
+    skillMatchScore: { type: Number, default: 0 },
     matchedSkills: [{ type: String }],
     missingSkills: [{ type: String }],
   },
