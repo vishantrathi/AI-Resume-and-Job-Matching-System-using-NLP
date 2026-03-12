@@ -14,6 +14,7 @@ import JobList from './pages/JobList';
 import PostJob from './pages/PostJob';
 import SkillAnalysis from './pages/SkillAnalysis';
 import SavedJobs from './pages/SavedJobs';
+import CareerRoadmap from './pages/CareerRoadmap';
 import './App.css';
 
 const AppRoutes = () => {
@@ -48,6 +49,10 @@ const AppRoutes = () => {
       <Route
         path="/skill-analysis"
         element={<PrivateRoute role="candidate"><SkillAnalysis /></PrivateRoute>}
+      />
+      <Route
+        path="/career-roadmap"
+        element={<PrivateRoute role="candidate"><CareerRoadmap /></PrivateRoute>}
       />
       <Route
         path="/saved-jobs"

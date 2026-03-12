@@ -54,6 +54,7 @@ const Navbar = () => {
                     <Link to="/upload" className={linkClass('/upload')}>Upload Resume</Link>
                     <Link to="/recommendations" className={linkClass('/recommendations')}>Matches</Link>
                     <Link to="/skill-analysis" className={linkClass('/skill-analysis')}>Skills</Link>
+                    <Link to="/career-roadmap" className={linkClass('/career-roadmap')}>Roadmap</Link>
                     <Link to="/saved-jobs" className={linkClass('/saved-jobs')}>Discover</Link>
                     <Link to="/jobs" className={linkClass('/jobs')}>Jobs</Link>
                   </>
@@ -108,6 +109,7 @@ const Navbar = () => {
                     <Link to="/upload" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">Upload Resume</Link>
                     <Link to="/recommendations" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">Matches</Link>
                     <Link to="/skill-analysis" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">Skill Analysis</Link>
+                    <Link to="/career-roadmap" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">Career Roadmap</Link>
                     <Link to="/saved-jobs" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">Discover Jobs</Link>
                     <Link to="/jobs" onClick={() => setMobileOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">Browse Jobs</Link>
                   </>

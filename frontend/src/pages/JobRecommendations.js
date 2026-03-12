@@ -351,7 +351,8 @@ function ChartsPanel({ recommendations, skills }) {
 // ─── Skill gap detail panel ───────────────────────────────────────────────────
 function GapPanel({ selected, onClose }) {
   if (!selected) return null;
-  const { job = {}, matchingScore = 0, matchedSkills = [], missingSkills = [] } = selected;
+  const { job = {}, matchingScore = 0, skillMatchScore: rawSkillScore, matchedSkills = [], missingSkills = [] } = selected;
+  const skillMatchScore = rawSkillScore || 0;
 
   return (
     <motion.div
@@ -374,8 +375,8 @@ function GapPanel({ selected, onClose }) {
         </button>
       </div>
 
-      {/* Score bar */}
-      <div className="mb-5">
+      {/* Overall Match Score bar */}
+      <div className="mb-4">
         <div className="flex justify-between text-sm text-gray-600 mb-1">
           <span>Match Score</span>
           <strong style={{ color: scoreColor(matchingScore) }}>{matchingScore}%</strong>
@@ -387,6 +388,23 @@ function GapPanel({ selected, onClose }) {
             initial={{ width: 0 }}
             animate={{ width: `${matchingScore}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        </div>
+      </div>
+
+      {/* Skill Match Score bar */}
+      <div className="mb-5">
+        <div className="flex justify-between text-sm text-gray-600 mb-1">
+          <span>Skill Match</span>
+          <strong style={{ color: scoreColor(skillMatchScore) }}>{skillMatchScore}%</strong>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+          <motion.div
+            className="h-2.5 rounded-full"
+            style={scoreGradientStyle(skillMatchScore)}
+            initial={{ width: 0 }}
+            animate={{ width: `${skillMatchScore}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
           />
         </div>
       </div>
@@ -423,10 +441,16 @@ function GapPanel({ selected, onClose }) {
         </div>
       </div>
 
-      {/* Tip */}
+      {/* Tip + Career Roadmap CTA */}
       {missingSkills.length > 0 && (
-        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-700">
-          💡 Learn <strong>{missingSkills.slice(0, 2).join(', ')}</strong> to boost your match.
+        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-700 mb-3">
+          <p className="mb-2">💡 Learn <strong>{missingSkills.slice(0, 2).join(', ')}</strong> to boost your match.</p>
+          <Link
+            to="/career-roadmap"
+            className="inline-flex items-center gap-1.5 bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors"
+          >
+            🗺️ View Career Roadmap →
+          </Link>
         </div>
       )}
 
@@ -436,7 +460,7 @@ function GapPanel({ selected, onClose }) {
           href={job.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 px-4 rounded-xl transition-colors"
+          className="mt-2 block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 px-4 rounded-xl transition-colors"
         >
           Apply Now →
         </a>

@@ -16,6 +16,7 @@ function normaliseMatchDoc(matchDoc) {
   return {
     id: matchDoc._id ? String(matchDoc._id) : null,
     matchingScore: matchDoc.matchingScore,
+    skillMatchScore: matchDoc.skillMatchScore || 0,
     matchedSkills: matchDoc.matchedSkills || [],
     missingSkills: matchDoc.missingSkills || [],
     job: {
@@ -41,9 +42,14 @@ function normaliseScrapedMatch(scored) {
   const matchingScore = scored.matchingScore !== undefined ? scored.matchingScore : (matchData.matchingScore ?? 0);
   const matchedSkills = scored.matchedSkills !== undefined ? scored.matchedSkills : (matchData.matchedSkills ?? []);
   const missingSkills = scored.missingSkills !== undefined ? scored.missingSkills : (matchData.missingSkills ?? []);
+  const jobSkillCount = (job.requiredSkills || job.skills || []).length;
+  const skillMatchScore = jobSkillCount > 0
+    ? Math.round((matchedSkills.length / jobSkillCount) * 100)
+    : 0;
   return {
     id: scored._id ? String(scored._id) : null,
     matchingScore,
+    skillMatchScore,
     matchedSkills,
     missingSkills,
     job: {
@@ -82,10 +88,14 @@ const matchJobs = async (req, res) => {
   const results = [];
   for (const job of jobs) {
     const { matchingScore, matchedSkills, missingSkills } = calculateMatchEnhanced(resume, job);
+    const totalJobSkills = (job.requiredSkills || []).length;
+    const skillMatchScore = totalJobSkills > 0
+      ? Math.round((matchedSkills.length / totalJobSkills) * 100)
+      : 0;
 
     const match = await Match.findOneAndUpdate(
       { candidate: req.user.id, resume: resume._id, job: job._id },
-      { matchingScore, matchedSkills, missingSkills },
+      { matchingScore, skillMatchScore, matchedSkills, missingSkills },
       { upsert: true, new: true },
     );
 
@@ -132,9 +142,13 @@ const getRecommendations = async (req, res) => {
     const jobs = await Job.find({ isActive: true });
     for (const job of jobs) {
       const { matchingScore, matchedSkills, missingSkills } = calculateMatchEnhanced(resume, job);
+      const totalJobSkills = (job.requiredSkills || []).length;
+      const skillMatchScore = totalJobSkills > 0
+        ? Math.round((matchedSkills.length / totalJobSkills) * 100)
+        : 0;
       await Match.findOneAndUpdate(
         { candidate: candidateId, resume: resume._id, job: job._id },
-        { matchingScore, matchedSkills, missingSkills },
+        { matchingScore, skillMatchScore, matchedSkills, missingSkills },
         { upsert: true, new: true },
       );
     }

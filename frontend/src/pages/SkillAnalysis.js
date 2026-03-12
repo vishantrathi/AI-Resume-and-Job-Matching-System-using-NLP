@@ -268,7 +268,7 @@ const SkillAnalysis = () => {
                   </div>
                 </div>
 
-                {/* Learning Suggestions */}
+                {/* Learning Suggestions + Career Roadmap CTA */}
                 {(skillGap.missingSkills || []).length > 0 && (
                   <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
                     <h3 className="text-sm font-semibold text-blue-800 mb-2">💡 Learning Suggestions</h3>
@@ -283,6 +283,14 @@ const SkillAnalysis = () => {
                         </li>
                       ))}
                     </ul>
+                    <div className="mt-4">
+                      <Link
+                        to="/career-roadmap"
+                        className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                      >
+                        🗺️ Generate Career Roadmap →
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
